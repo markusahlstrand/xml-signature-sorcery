@@ -1,4 +1,4 @@
-import { SignedXml, CryptoConfig } from 'xmldsigjs';
+import { SignedXml } from 'xmldsigjs';
 
 export const generateCertificate = async () => {
   const keys = await window.crypto.subtle.generateKey(
@@ -24,20 +24,16 @@ export const signXml = async (xmlString, privateKey, certificate) => {
     const xmlDoc = new DOMParser().parseFromString(xmlString, "application/xml");
     const signedXml = new SignedXml();
 
-    // Set the hash algorithm explicitly
-    CryptoConfig.Default.SetHashAlgorithm("SHA-256", "http://www.w3.org/2001/04/xmlenc#sha256");
-
     // Set the signing key and options
     await signedXml.Sign(
-      { name: "RSASSA-PKCS1-v1_5" },
+      { name: "RSASSA-PKCS1-v1_5", hash: { name: "SHA-256" } },
       privateKey,
       xmlDoc,
       {
         keyValue: certificate,
         references: [
           { 
-            hash: "SHA-256",
-            transforms: ["enveloped-signature"],
+            transforms: ["enveloped-signature", "c14n"],
           }
         ]
       }
