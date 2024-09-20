@@ -35,15 +35,15 @@ const XmlSigner = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">XML Signer</h2>
+    <div className="max-w-4xl mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">SAML XML Signer</h2>
       <Button onClick={handleGenerateCertificate} className="mb-4 mr-2">Generate Certificate</Button>
       <Textarea
         className="w-full mb-4"
-        rows={10}
+        rows={15}
         value={xml}
         onChange={(e) => setXml(e.target.value)}
-        placeholder="Enter XML to sign"
+        placeholder="Enter SAML XML to sign"
       />
       <Button onClick={handleSign} className="mb-4" disabled={!certificate}>Sign XML</Button>
       {signedXml && (
@@ -51,7 +51,7 @@ const XmlSigner = () => {
           <h3 className="text-xl font-semibold mb-2">Signed XML:</h3>
           <Textarea
             className="w-full"
-            rows={10}
+            rows={20}
             value={signedXml}
             readOnly
           />
