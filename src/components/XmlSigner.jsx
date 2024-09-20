@@ -1,28 +1,32 @@
 import React, { useState } from 'react';
-import { signXml } from '../utils/xmlSigner';
+import { signXml, generateCertificate } from '../utils/xmlSigner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 const XmlSigner = () => {
   const [xml, setXml] = useState('');
   const [signedXml, setSignedXml] = useState('');
+  const [certificate, setCertificate] = useState(null);
+
+  const handleGenerateCertificate = async () => {
+    try {
+      const newCertificate = await generateCertificate();
+      setCertificate(newCertificate);
+      alert('Certificate generated successfully!');
+    } catch (error) {
+      console.error('Error generating certificate:', error);
+      alert('Failed to generate certificate. Check console for details.');
+    }
+  };
 
   const handleSign = async () => {
-    try {
-      // In a real application, you would securely manage the private key
-      // This is just a placeholder for demonstration purposes
-      const privateKey = await window.crypto.subtle.generateKey(
-        {
-          name: "RSASSA-PKCS1-v1_5",
-          modulusLength: 2048,
-          publicExponent: new Uint8Array([1, 0, 1]),
-          hash: "SHA-256",
-        },
-        true,
-        ["sign"]
-      );
+    if (!certificate) {
+      alert('Please generate a certificate first.');
+      return;
+    }
 
-      const signed = await signXml(xml, privateKey);
+    try {
+      const signed = await signXml(xml, certificate.privateKey, certificate.certificate);
       setSignedXml(signed);
     } catch (error) {
       console.error('Error signing XML:', error);
@@ -33,6 +37,7 @@ const XmlSigner = () => {
   return (
     <div className="max-w-2xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">XML Signer</h2>
+      <Button onClick={handleGenerateCertificate} className="mb-4 mr-2">Generate Certificate</Button>
       <Textarea
         className="w-full mb-4"
         rows={10}
@@ -40,7 +45,7 @@ const XmlSigner = () => {
         onChange={(e) => setXml(e.target.value)}
         placeholder="Enter XML to sign"
       />
-      <Button onClick={handleSign} className="mb-4">Sign XML</Button>
+      <Button onClick={handleSign} className="mb-4" disabled={!certificate}>Sign XML</Button>
       {signedXml && (
         <div>
           <h3 className="text-xl font-semibold mb-2">Signed XML:</h3>
