@@ -1,7 +1,6 @@
-import { SignedXml, Parse, Application } from 'xmldsigjs';
+import { SignedXml } from 'xmldsigjs';
 
 export const generateCertificate = async () => {
-  // This is a simplified example. In a real-world scenario, you'd use a proper certificate authority.
   const keys = await window.crypto.subtle.generateKey(
     {
       name: "RSASSA-PKCS1-v1_5",
@@ -22,54 +21,24 @@ export const generateCertificate = async () => {
 
 export const signXml = async (xmlString, privateKey, certificate) => {
   try {
-    // Parse the XML
-    const xmlDoc = Parse(xmlString);
+    const xmlDoc = new DOMParser().parseFromString(xmlString, "application/xml");
+    const signedXml = new SignedXml();
 
-    // Find the Assertion element
-    const assertion = xmlDoc.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Assertion")[0];
-    if (!assertion) {
-      throw new Error("Assertion element not found in the XML");
-    }
-
-    // Find the Issuer element
-    const issuer = assertion.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer")[0];
-    if (!issuer) {
-      throw new Error("Issuer element not found in the Assertion");
-    }
-
-    // Create a new SignedXml object
-    const signedXml = new SignedXml(xmlDoc);
-
-    // Set the signature algorithm
-    signedXml.SignatureAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
-
-    // Set the canonicalization method
-    signedXml.CanonicalizationMethod = {
-      Algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#"
-    };
-
-    // Create a reference to the Assertion element
-    const reference = signedXml.AddReference(
-      "",
-      "http://www.w3.org/2001/04/xmlenc#sha256",
-      [
-        "http://www.w3.org/2000/09/xmldsig#enveloped-signature",
-        "http://www.w3.org/2001/10/xml-exc-c14n#"
-      ]
+    // Set the signing key
+    await signedXml.Sign(
+      { name: "RSASSA-PKCS1-v1_5", hash: { name: "SHA-256" } },
+      privateKey,
+      xmlDoc,
+      {
+        references: [
+          { xpath: "//*[local-name(.)='Assertion']", transforms: ["enveloped-signature"] }
+        ]
+      }
     );
 
-    // Set the key info
-    const keyInfo = new Application.KeyInfoX509Data(certificate);
-    signedXml.KeyInfo = keyInfo;
-
-    // Sign the XML
-    await signedXml.Sign(privateKey);
-
-    // Get the signature XML
+    // Get the signature XML and append it to the document
     const signatureElement = signedXml.GetXml();
-
-    // Insert the signature after the Issuer element
-    assertion.insertBefore(signatureElement, issuer.nextSibling);
+    xmlDoc.documentElement.appendChild(signatureElement);
 
     // Serialize the signed XML
     return new XMLSerializer().serializeToString(xmlDoc);
