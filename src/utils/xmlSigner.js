@@ -38,7 +38,7 @@ export const signXml = async (xmlString, privateKey, certificate) => {
     }
 
     // Create a new SignedXml object
-    const signedXml = new SignedXml();
+    const signedXml = new SignedXml(xmlDoc);
 
     // Set the signature algorithm
     signedXml.SignatureAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
@@ -49,17 +49,13 @@ export const signXml = async (xmlString, privateKey, certificate) => {
     };
 
     // Create a reference to the Assertion element
-    const reference = signedXml.AddReference(
-      "http://www.w3.org/2001/04/xmlenc#sha256",
-      assertion,
-      "http://www.w3.org/2000/09/xmldsig#enveloped-signature"
-    );
-
-    // Add the exc-c14n transform
+    const reference = signedXml.References.Add("http://www.w3.org/2001/04/xmlenc#sha256");
+    reference.Uri = "";
+    reference.AddTransform("http://www.w3.org/2000/09/xmldsig#enveloped-signature");
     reference.AddTransform("http://www.w3.org/2001/10/xml-exc-c14n#");
 
     // Set the key info
-    signedXml.KeyInfo = certificate;
+    signedXml.KeyInfo = new Application.KeyInfoX509Data(certificate);
 
     // Sign the XML
     await signedXml.Sign(privateKey);
