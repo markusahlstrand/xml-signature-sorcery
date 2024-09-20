@@ -44,7 +44,9 @@ export const signXml = async (xmlString, privateKey, certificate) => {
     signedXml.SignatureAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
 
     // Set the canonicalization method
-    signedXml.CanonicalizationMethod.Algorithm = "http://www.w3.org/2001/10/xml-exc-c14n#";
+    signedXml.CanonicalizationMethod = {
+      Algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#"
+    };
 
     // Create a reference to the Assertion element
     const reference = signedXml.AddReference(
